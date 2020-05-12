@@ -180,8 +180,8 @@ def db_setup_connect():
     if not os.path.exists(db_file):
         db_setup(db_file)
     else:
-        print("Already Created")
-
+        conn = db_connect(db_file)
+        return conn
 
 def collect_current_print_data(ip, api_key):
     url = 'http://{}/api/job'.format(ip)
@@ -283,39 +283,15 @@ def monitor_prints(conn):
 
 
 def main(conn):
-    printers = get_all_printers(conn)
-    for printer in printers:
-        printer_id = printer[0]
-        printer_position = printer[1]
-        printer_ip = printer[2]
-        printer_api_key = printer[3]
-        is_stalled = printer[4]
-
-        # Check to see if the printer is currently stalled
-        if is_stalled:
-            # if stalled run the stalled code
-            stalled(conn, printer_id, printer_ip, printer_api_key)
-
-        else:
-            # Continue with normal checks
-            if compare_progress(conn, printer_id, printer_ip, printer_api_key) == 'same':
-                set_stalled(conn, printer_id)
-
-
-def test(conn):
-    printers = get_all_printers(conn)
-    printer = printers[4]
     monitor_prints(conn)
-    # stalled(conn, 1, printer[2], printer[3])
 
 
 if __name__ == '__main__':
     while True:
         db_file = './stats.db'
-        conn = db_connect(db_file)
+        conn = db_setup_connect()
 
-    # main(conn)
         print("-------------------------------")
-        test(conn)
+        main(conn)
         conn.close()
         time.sleep(10)

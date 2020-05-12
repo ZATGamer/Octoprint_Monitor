@@ -179,9 +179,9 @@ def db_setup(db):
 def db_setup_connect(db_file):
     if not os.path.exists(db_file):
         db_setup(db_file)
-    else:
-        conn = db_connect(db_file)
-        return conn
+
+    conn = db_connect(db_file)
+    return conn
 
 def collect_current_print_data(ip, api_key):
     url = 'http://{}/api/job'.format(ip)

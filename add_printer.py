@@ -1,4 +1,4 @@
-from print_stall import db_setup, db_setup_connect
+from print_stall import db_setup_connect
 
 
 if __name__ == '__main__':

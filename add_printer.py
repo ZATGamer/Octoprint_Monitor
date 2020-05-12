@@ -3,7 +3,7 @@ from print_stall import db_setup, db_setup_connect
 
 if __name__ == '__main__':
     db_file = './stats.db'
-    conn = db_setup_connect()
+    conn = db_setup_connect(db_file)
 
     ip = input("What is the Printers IP?: ")
     number = input("What is the Printer Number?: ")

@@ -176,7 +176,7 @@ def db_setup(db):
     conn.close()
 
 
-def db_setup_connect():
+def db_setup_connect(db_file):
     if not os.path.exists(db_file):
         db_setup(db_file)
     else:
@@ -289,7 +289,7 @@ def main(conn):
 if __name__ == '__main__':
     while True:
         db_file = './stats.db'
-        conn = db_setup_connect()
+        conn = db_setup_connect(db_file)
 
         print("-------------------------------")
         main(conn)

@@ -1,0 +1,5 @@
+.idea
+stats.db
+email_config.ini
+create_test_data.py
+__pycache__/

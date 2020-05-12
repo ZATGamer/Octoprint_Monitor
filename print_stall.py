@@ -75,7 +75,7 @@ def print_completed(conn, id, p_number, printer_status, job_name):
     cur.execute(complete_sql)
     conn.commit()
     # Send Notice
-    subject = "P{}, Job Completed"
+    subject = "P{}, Job Completed".format(p_number)
     message = "Printer {} has completed printing of {}.".format(p_number, job_name)
     message_sent = send_notification(subject, message)
     # If the message success sent
@@ -182,6 +182,7 @@ def db_setup_connect(db_file):
 
     conn = db_connect(db_file)
     return conn
+
 
 def collect_current_print_data(ip, api_key):
     url = 'http://{}/api/job'.format(ip)

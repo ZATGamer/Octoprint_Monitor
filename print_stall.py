@@ -4,7 +4,6 @@ import requests
 import time
 import json
 import sqlite3
-from sqlite3 import Error
 import os
 import datetime
 from email_notification import send_notification
@@ -13,22 +12,21 @@ from email_notification import send_notification
 def get_all_printers(conn):
     # Get all printers out of the database to check
     cur = conn.cursor()
-    sql = '''SELECT id, printer_number, printer_ip, printer_api_key, stalled FROM state'''
+    sql = '''SELECT id, printer_number, printer_ip, printer_api_key FROM state'''
     printers = cur.execute(sql)
     printers = printers.fetchall()
     return printers
 
 
-def compare_progress(conn, printer_id, printer_ip, printer_api_key):
+def compare_progress(conn, id, last, current):
     # For the printer supplied, dig out past data from the database and then current data from Octoprint
-    last_p = get_last_progress(conn, printer_id)
-    current_p = get_current_progress(printer_ip, printer_api_key)
-    print("Last Progress: {}\nCurrent Progress: {}".format(last_p, current_p))
 
-    if current_p != last_p:
+    print("Last Progress: {}\nCurrent Progress: {}".format(last, current))
+
+    if current != last:
         # Update last to current
         print("DIFFERENT")
-        update_last_progress(conn, printer_id, current_p)
+        update_last_progress(conn, id, current)
         return 'different'
     else:
         # Print Stalled?
@@ -49,7 +47,7 @@ def print_started(conn, id, p_number, printer_state, job_name, job_progress):
     sql = '''UPDATE state set printer_status = '{}',
                               job_name = '{}',
                               progress = {},
-                              stall_start = Null,
+                              stall_start = null,
                               stalled = 0,
                               stall_count = 0,
                               stall_notified = 0,
@@ -99,30 +97,27 @@ def clear_stalled(conn, printer_id):
     conn.commit()
 
 
-def stalled(conn, printer_id, printer_ip, printer_api_key):
+def stalled(conn, printer_id):
     cur = conn.cursor()
     get_info_sql = '''SELECT stall_start, stall_count, stall_notified FROM state WHERE id = {}'''.format(printer_id)
-    if compare_progress(conn, printer_id, printer_ip, printer_api_key) == 'same':
-        info = cur.execute(get_info_sql)
-        info = info.fetchone()
-        stall_start = info[0]
-        stall_start = datetime.datetime.strptime(stall_start, '%Y-%m-%d %H:%M:%S.%f')
-        stall_count = info[1] + 1
-        stall_notified = info[2]
+    info = cur.execute(get_info_sql)
+    info = info.fetchone()
+    stall_start = datetime.datetime.strptime(info[0], '%Y-%m-%d %H:%M:%S.%f')
+    stall_count = info[1] + 1
+    stall_notified = info[2]
+    update_call_count_sql = '''UPDATE state SET stall_count = {}'''.format(stall_count)
+    cur.execute(update_call_count_sql)
+    conn.commit()
 
-        update_call_count_sql = '''UPDATE state SET stall_count = {}'''.format(stall_count)
-        cur.execute(update_call_count_sql)
-        conn.commit()
-
-        if stall_start + datetime.timedelta(minutes=3) <= datetime.datetime.now():
-            if not stall_notified:
-                # If notice has NOT been sent yet...
-                subject = "P{}, Stalled".format(printer_id)
-                message = "P{} Appears to of stalled during the print.".format(printer_id)
-                message_sent = send_notification(subject, message)
-                if message_sent:
-                    cur.execute('''UPDATE state SET stall_notified = 1 WHERE id = {}'''.format(printer_id))
-                    conn.commit()
+    if stall_start + datetime.timedelta(minutes=3) <= datetime.datetime.now():
+        if not stall_notified:
+            # If notice has NOT been sent yet...
+            subject = "P{}, Stalled".format(printer_id)
+            message = "P{} Appears to of stalled during the print.".format(printer_id)
+            message_sent = send_notification(subject, message)
+            if message_sent:
+                cur.execute('''UPDATE state SET stall_notified = 1 WHERE id = {}'''.format(printer_id))
+                conn.commit()
 
 
 def get_current_progress(ip, api_key):
@@ -148,10 +143,6 @@ def update_last_progress(conn, printer_id, progress):
     conn.commit()
 
 
-def db_connect(db_file):
-    return sqlite3.connect(db_file)
-
-
 def db_setup(db):
     print("Creating the Database for the first time.")
     sql_create_state_table = """CREATE TABLE IF NOT EXISTS state (
@@ -173,6 +164,7 @@ def db_setup(db):
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
     cursor.execute(sql_create_state_table)
+    conn.commit()
     conn.close()
 
 
@@ -180,8 +172,7 @@ def db_setup_connect(db_file):
     if not os.path.exists(db_file):
         db_setup(db_file)
 
-    conn = db_connect(db_file)
-    return conn
+    return sqlite3.connect(db_file)
 
 
 def collect_current_print_data(ip, api_key):
@@ -258,15 +249,15 @@ def monitor_prints(conn):
 
         # If the stats is printing. Then do stall checks
         if c_status == 'Printing':
-            job_progress = compare_progress(conn, id, ip, api_key)
+            job_progress = compare_progress(conn, id, db_progress, c_progress)
             # if the job progress says same
             if job_progress == 'same':
                 # was it same before
                 if not db_stalled:
-                    # if stalled was False, then set stalled
+                    # if that database shows the print as not stalled, then set stalled
                     set_stalled(conn, id)
-                else:
-                    # Else preform stalled logic
+                elif db_stalled:
+                    # If the database does show stalled preform stalled logic
                     stalled(conn, id, ip, api_key)
             elif job_progress == 'different':
                 # was it before
@@ -284,10 +275,15 @@ def monitor_prints(conn):
 
 
 def main(conn):
-    try:
-        monitor_prints(conn)
-    except:
-        pass
+    monitor_prints(conn)
+
+
+def test(conn):
+    #print_started(conn, 1, 1, 'Printing', "TEST", "0.0000")
+    #set_stalled(conn, 1)
+    clear_stalled(conn, 1)
+    stalled(conn, 1, '192.168.1.201', "07DD84BBBD1F46B884F37C75F5780A7B")
+    exit(0)
 
 
 if __name__ == '__main__':
@@ -297,5 +293,6 @@ if __name__ == '__main__':
 
         print("-------------------------------")
         main(conn)
+        # test(conn)
         conn.close()
         time.sleep(10)

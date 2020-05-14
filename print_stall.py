@@ -284,7 +284,10 @@ def monitor_prints(conn):
 
 
 def main(conn):
-    monitor_prints(conn)
+    try:
+        monitor_prints(conn)
+    except:
+        pass
 
 
 if __name__ == '__main__':

@@ -258,7 +258,7 @@ def monitor_prints(conn):
                     set_stalled(conn, id)
                 elif db_stalled:
                     # If the database does show stalled preform stalled logic
-                    stalled(conn, id, ip, api_key)
+                    stalled(conn, id)
             elif job_progress == 'different':
                 # was it before
                 if db_stalled:

@@ -123,7 +123,12 @@ def stalled(conn, printer_id):
 def get_current_progress(ip, api_key):
     url = 'http://{}/api/job'.format(ip)
     headers = {"X-Api-Key": api_key}
-    r_data = requests.get(url, headers=headers)
+    try:
+        r_data = requests.get(url, headers=headers)
+    except OSError:
+        print("Printer {} is unreachable.".format(ip))
+        return "-1"
+
     j_data = json.loads(r_data.content)
     current_progress = j_data['progress']['completion']
     return current_progress
@@ -178,12 +183,16 @@ def db_setup_connect(db_file):
 def collect_current_print_data(ip, api_key):
     url = 'http://{}/api/job'.format(ip)
     headers = {"X-Api-Key": api_key}
-    r_data = requests.get(url, headers=headers)
-    j_data = json.loads(r_data.content)
-    printer_status = j_data['state']
-    job_name = j_data['job']['file']['name']
-    progress = j_data['progress']['completion']
-    return printer_status, job_name, progress
+    try:
+        r_data = requests.get(url, headers=headers)
+        j_data = json.loads(r_data.content)
+        printer_status = j_data['state']
+        job_name = j_data['job']['file']['name']
+        progress = j_data['progress']['completion']
+        return printer_status, job_name, progress
+    except OSError:
+        print("Printer {} Unreachable.".format(ip))
+        return "Unknown", "Unknown", -1
 
 
 def collect_last_print_data(id):

@@ -193,6 +193,9 @@ def collect_current_print_data(ip, api_key):
     except OSError:
         print("Printer {} Unreachable.".format(ip))
         return "Unknown", "Unknown", -1
+    except json.decoder.JSONDecodeError:
+        print("No JSON for Printer {}".format(ip))
+        return "Unknown", "Unknown", -1
 
 
 def collect_last_print_data(id):

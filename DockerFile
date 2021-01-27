@@ -1,0 +1,10 @@
+FROM python:3
+
+ADD print_stall.py /
+ADD email_notification.py /
+ADD discord_webhook.py /
+ADD requirements.txt /
+
+RUN pip install -r requirements.txt
+
+CMD python -u /print_stall.py

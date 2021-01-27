@@ -5,7 +5,7 @@ import configparser
 def send_notification(subject, body):
     print("Sending Email")
     config = configparser.RawConfigParser()
-    config.read('email_config.ini')
+    config.read('./config/email_config.ini')
 
     recipients_list = []
     recipients_list.append(config.get('EmailInfo', 'recipient'))

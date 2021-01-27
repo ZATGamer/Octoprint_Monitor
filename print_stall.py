@@ -7,6 +7,8 @@ import sqlite3
 import os
 import datetime
 from email_notification import send_notification
+from discord_webhook import send_discord_message
+import logging
 
 
 def get_all_printers(conn):
@@ -18,19 +20,19 @@ def get_all_printers(conn):
     return printers
 
 
-def compare_progress(conn, id, last, current):
+def compare_progress(conn, id, last, current, ip):
     # For the printer supplied, dig out past data from the database and then current data from Octoprint
-
+    print("Printer: {}".format(ip))
     print("Last Progress: {}\nCurrent Progress: {}".format(last, current))
 
     if current != last:
         # Update last to current
-        print("DIFFERENT")
+        print("Yeah!! It's DIFFERENT")
         update_last_progress(conn, id, current)
         return 'different'
     else:
         # Print Stalled?
-        print("SAME?")
+        print("Ut'oh... It's the SAME")
         return "same"
 
 
@@ -60,6 +62,7 @@ def print_started(conn, id, p_number, printer_state, job_name, job_progress):
     subject = "P{}, Job Started".format(p_number)
     message = "Printer {} has started printing of {}.".format(p_number, job_name)
     message_sent = send_notification(subject, message)
+    send_discord_message(subject, message)
     if message_sent:
         notified_sql = '''UPDATE state set started_notified = 1 where id = {}'''.format(id)
         cur.execute(notified_sql)
@@ -76,6 +79,7 @@ def print_completed(conn, id, p_number, printer_status, job_name):
     subject = "P{}, Job Completed".format(p_number)
     message = "Printer {} has completed printing of {}.".format(p_number, job_name)
     message_sent = send_notification(subject, message)
+    send_discord_message(subject, message)
     # If the message success sent
     if message_sent:
         notified_sql = '''UPDATE state set complete_notified = 1 where id = {}'''.format(id)
@@ -115,6 +119,7 @@ def stalled(conn, printer_id):
             subject = "P{}, Stalled".format(printer_id)
             message = "P{} Appears to of stalled during the print.".format(printer_id)
             message_sent = send_notification(subject, message)
+            send_discord_message(subject, message)
             if message_sent:
                 cur.execute('''UPDATE state SET stall_notified = 1 WHERE id = {}'''.format(printer_id))
                 conn.commit()
@@ -185,11 +190,16 @@ def collect_current_print_data(ip, api_key):
     headers = {"X-Api-Key": api_key}
     try:
         r_data = requests.get(url, headers=headers)
-        j_data = json.loads(r_data.content)
-        printer_status = j_data['state']
-        job_name = j_data['job']['file']['name']
-        progress = j_data['progress']['completion']
-        return printer_status, job_name, progress
+        # first check is to see if the stats code is 200, if it is anything else. The printer is not printing or even connected.
+        if r_data.status_code == 200:
+            j_data = json.loads(r_data.content)
+            printer_status = j_data['state']
+            job_name = j_data['job']['file']['name']
+            progress = j_data['progress']['completion']
+            return printer_status, job_name, progress
+        else:
+            print("Printer {}: No 3D Printer Connected".format(ip))
+            return "Unknown", "Unknown", -1
     except OSError:
         print("Printer {} Unreachable.".format(ip))
         return "Unknown", "Unknown", -1
@@ -225,6 +235,8 @@ def status_changed(conn, db_status, c_status, id, number, c_job_name, db_job_nam
         print_completed(conn, id, number, c_status, db_job_name)
         print("Completed")
     else:
+        # TODO: Handel the Unknown State
+        # TODO: Handel Canceling State
         cur = conn.cursor()
         cur.execute('''UPDATE state set printer_status = '{}' WHERE id = {}'''.format(c_status, id))
         conn.commit()
@@ -261,7 +273,7 @@ def monitor_prints(conn):
 
         # If the stats is printing. Then do stall checks
         if c_status == 'Printing':
-            job_progress = compare_progress(conn, id, db_progress, c_progress)
+            job_progress = compare_progress(conn, id, db_progress, c_progress, ip)
             # if the job progress says same
             if job_progress == 'same':
                 # was it same before
@@ -290,17 +302,17 @@ def main(conn):
     monitor_prints(conn)
 
 
-def test(conn):
-    #print_started(conn, 1, 1, 'Printing', "TEST", "0.0000")
-    #set_stalled(conn, 1)
-    clear_stalled(conn, 1)
-    stalled(conn, 1, '192.168.1.201', "07DD84BBBD1F46B884F37C75F5780A7B")
-    exit(0)
+# def test(conn):
+#     #print_started(conn, 1, 1, 'Printing', "TEST", "0.0000")
+#     #set_stalled(conn, 1)
+#     clear_stalled(conn, 1)
+#     stalled(conn, 1, '192.168.1.201', "07DD84BBBD1F46B884F37C75F5780A7B")
+#     exit(0)
 
 
 if __name__ == '__main__':
     while True:
-        db_file = './stats.db'
+        db_file = './config/stats.db'
         conn = db_setup_connect(db_file)
 
         print("-------------------------------")

@@ -264,6 +264,7 @@ def monitor_prints(conn):
         db_job_name = db_data[1]
         db_progress = db_data[2]
         db_stalled = db_data[5]
+        db_stalled_notified = db_data[7]
 
         # Now that we have the data we will start doing our checks
         # First we will compare the DB vs Current and see if they are the same for state
@@ -287,6 +288,12 @@ def monitor_prints(conn):
                 # was it before
                 if db_stalled:
                     # if the DB says it was stalled before, lets clear it now.
+                    # But first was a notice sent, if so send a stall clear notice then clear the db.
+                    if db_stalled_notified:
+                        subject = "P{} Recovered!".format(number)
+                        message = "P{} has recovered from a stall.".format(number)
+                        send_notification(subject, message)
+                        send_discord_message(subject, message)
                     clear_stalled(conn, id)
                 else:
                     # Just putting this here to be able to do something later.

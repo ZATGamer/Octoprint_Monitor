@@ -295,8 +295,8 @@ def monitor_prints(conn):
                     # if the DB says it was stalled before, lets clear it now.
                     # But first was a notice sent, if so send a stall clear notice then clear the db.
                     if db_stalled_notified:
-                        subject = "P{} Recovered!".format(number)
-                        message = "P{} has recovered from a stall.".format(number)
+                        subject = "P{}, Recovered!".format(number)
+                        message = "Printer {} has recovered from a stall!".format(number)
                         send_notification(subject, message)
                         send_discord_message(subject, message)
                     clear_stalled(conn, id)

@@ -323,6 +323,8 @@ if __name__ == '__main__':
         conn = db_setup_connect(db_file)
 
         print("-------------------------------")
+        print(datetime.datetime.now())
+        print("-------------------------------")
         main(conn)
         # test(conn)
         conn.close()

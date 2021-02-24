@@ -234,6 +234,11 @@ def status_changed(conn, db_status, c_status, id, number, c_job_name, db_job_nam
         # Print Completed
         print_completed(conn, id, number, c_status, db_job_name)
         print("Completed")
+    elif c_status.startswith("Offline"):
+        # This is to fix the crash when the USB is unplugged from the printer.
+        cur = conn.cursor()
+        cur.execute('''UPDATE state set printer_status = '{}' WHERE id = {}'''.format("Offline", id))
+        conn.commit()
     else:
         # TODO: Handel the Unknown State
         # TODO: Handel Canceling State

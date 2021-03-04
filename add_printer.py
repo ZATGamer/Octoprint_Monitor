@@ -2,7 +2,7 @@ from print_stall import db_setup_connect
 
 
 if __name__ == '__main__':
-    db_file = './config/stats.db'
+    db_file = input("Where is the Database?: ") or './config/stats.db'
     conn = db_setup_connect(db_file)
 
     ip = input("What is the Printers IP?: ")

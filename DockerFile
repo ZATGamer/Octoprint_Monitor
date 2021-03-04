@@ -4,6 +4,7 @@ ADD print_stall.py /
 ADD email_notification.py /
 ADD discord_webhook.py /
 ADD requirements.txt /
+ADD add_printer.py /
 
 RUN pip install -r requirements.txt
 

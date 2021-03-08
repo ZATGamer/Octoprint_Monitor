@@ -5,8 +5,8 @@ def send_discord_message(subject, message, printer):
     print("TEST")
     # Color code chart
     colors = {
-        "STARTED": 65280,
-        "COMPLETED": 65280,
+        "STARTED": 255,
+        "COMPLETED": 5701887,
         "!!!STALLED!!!": 16711680,
         "RECOVERED!!!": 65280
     }
@@ -38,4 +38,7 @@ def send_discord_message(subject, message, printer):
 
 
 if __name__ == '__main__':
-    send_discord_message("RECOVERED!!!", "teste", "T1")
+    send_discord_message("STARTED", "teste", "T1")
+    send_discord_message("COMPLETED", "teste", "T1")
+    send_discord_message("!!!STALLED!!!", "teste", "T2")
+    send_discord_message("RECOVERED!!!", "teste", "T3")

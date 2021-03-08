@@ -1,22 +1,26 @@
 import requests
-
+import json
 
 def send_discord_message(subject, message, printer):
     print("TEST")
+    # Color code chart
+    colors = {
+        "STARTED": 65280,
+        "COMPLETED": 65280,
+        "!!!STALLED!!!": 16711680,
+        "RECOVERED!!!": 65280
+    }
     data = {
         "username": "Printer {}".format(printer),
-        "content": "{}, {}".format(subject, message),
+        #"content": "{}, {}".format(subject, message),
         #"color": 3553598,
-        # "embeds": [
-        #     {
-        #         "author": {
-        #             "name": "Captain Hook"
-        #         },
-        #         "title": "My new embed",
-        #         "description": "This is a cool-looking Discord embed, sent directly from JavaScript!",
-        #         "color": 3553598
-        #     },
-        # ],
+        "embeds": [
+            {
+                "title": subject,
+                "description": message,
+                "color": colors[subject]
+            },
+           ],
         "tts": False
     }
     headers = {'Content-type': 'application/json'}
@@ -25,7 +29,7 @@ def send_discord_message(subject, message, printer):
     webhook_base_url = "https://discord.com/api/webhooks/803386709735768144/V3zdiPK-wcaa-VcdEE_h9XcTFQkCEslD1UyE9U-DlwjjQPPHO_rGRkfxLp1XIBXXVtkY"
     print("Sending Discord Message")
     try:
-        test = requests.post(webhook_base_url, data=data)
+        test = requests.post(webhook_base_url, data=json.dumps(data), headers=headers)
         print(test.status_code)
         return 1
     except:
@@ -34,4 +38,4 @@ def send_discord_message(subject, message, printer):
 
 
 if __name__ == '__main__':
-    send_discord_message("TestE", "teste", "T1")
+    send_discord_message("RECOVERED!!!", "teste", "T1")

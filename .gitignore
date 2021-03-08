@@ -3,4 +3,4 @@ stats.db
 config/email_config.ini
 create_test_data.py
 __pycache__/
-venv/*
+/venv/

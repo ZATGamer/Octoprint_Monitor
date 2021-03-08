@@ -60,9 +60,10 @@ def print_started(conn, id, p_number, printer_state, job_name, job_progress):
     conn.commit()
     # Send a start notice
     subject = "P{}, Job Started".format(p_number)
+    discord_subject = "STARTED"
     message = "Printer {} has started printing of {}.".format(p_number, job_name)
     message_sent = send_notification(subject, message)
-    send_discord_message(subject, message)
+    send_discord_message(discord_subject, message, p_number)
     if message_sent:
         notified_sql = '''UPDATE state set started_notified = 1 where id = {}'''.format(id)
         cur.execute(notified_sql)
@@ -77,9 +78,10 @@ def print_completed(conn, id, p_number, printer_status, job_name):
     conn.commit()
     # Send Notice
     subject = "P{}, Job Completed".format(p_number)
+    discord_subject = "COMPLETED"
     message = "Printer {} has completed printing of {}.".format(p_number, job_name)
     message_sent = send_notification(subject, message)
-    send_discord_message(subject, message)
+    send_discord_message(discord_subject, message, p_number)
     # If the message success sent
     if message_sent:
         notified_sql = '''UPDATE state set complete_notified = 1 where id = {}'''.format(id)
@@ -117,9 +119,10 @@ def stalled(conn, printer_id):
         if not stall_notified:
             # If notice has NOT been sent yet...
             subject = "P{}, Stalled".format(printer_id)
+            discord_subject = "!!!STALLED!!!"
             message = "P{} Appears to of stalled during the print.".format(printer_id)
             message_sent = send_notification(subject, message)
-            send_discord_message(subject, message)
+            send_discord_message(discord_subject, message, printer_id)
             if message_sent:
                 cur.execute('''UPDATE state SET stall_notified = 1 WHERE id = {}'''.format(printer_id))
                 conn.commit()
@@ -296,9 +299,10 @@ def monitor_prints(conn):
                     # But first was a notice sent, if so send a stall clear notice then clear the db.
                     if db_stalled_notified:
                         subject = "P{}, Recovered!".format(number)
+                        discord_subject = "RECOVERED!!!"
                         message = "Printer {} has recovered from a stall!".format(number)
                         send_notification(subject, message)
-                        send_discord_message(subject, message)
+                        send_discord_message(subject, message, number)
                     clear_stalled(conn, id)
                 else:
                     # Just putting this here to be able to do something later.

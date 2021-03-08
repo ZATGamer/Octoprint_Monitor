@@ -302,7 +302,7 @@ def monitor_prints(conn):
                         discord_subject = "RECOVERED!!!"
                         message = "Printer {} has recovered from a stall!".format(number)
                         send_notification(subject, message)
-                        send_discord_message(subject, message, number)
+                        send_discord_message(discord_subject, message, number)
                     clear_stalled(conn, id)
                 else:
                     # Just putting this here to be able to do something later.

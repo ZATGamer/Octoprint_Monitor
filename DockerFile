@@ -5,7 +5,12 @@ ADD email_notification.py /
 ADD discord_webhook.py /
 ADD requirements.txt /
 ADD add_printer.py /
+ADD api.py /
+ADD wrapper.sh /
+ADD templates/index.html /templates/
 
 RUN pip install -r requirements.txt
 
-CMD python -u /print_stall.py
+#CMD python -u /print_stall.py
+#CMD python -u /api.py
+CMD ./wrapper.sh

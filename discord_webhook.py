@@ -1,14 +1,15 @@
 import requests
 import json
 
-def send_discord_message(subject, message, printer):
-    print("TEST")
+
+def send_discord_message(subject, message, printer, webhook_base_url):
     # Color code chart
     colors = {
         "STARTED": 255,
-        "COMPLETED": 5701887,
+        "COMPLETED": 65280,
         "!!!STALLED!!!": 16711680,
-        "RECOVERED!!!": 65280
+        "RECOVERED!!!": 16776960,
+        "Printer Added": 255,
     }
     data = {
         "username": "Printer {}".format(printer),
@@ -29,8 +30,7 @@ def send_discord_message(subject, message, printer):
     webhook_base_url = "https://discord.com/api/webhooks/803386709735768144/V3zdiPK-wcaa-VcdEE_h9XcTFQkCEslD1UyE9U-DlwjjQPPHO_rGRkfxLp1XIBXXVtkY"
     print("Sending Discord Message")
     try:
-        test = requests.post(webhook_base_url, data=json.dumps(data), headers=headers)
-        print(test.status_code)
+        requests.post(webhook_base_url, data=json.dumps(data), headers=headers)
         return 1
     except:
         print("Something Went Wrong")

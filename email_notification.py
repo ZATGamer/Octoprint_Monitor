@@ -2,7 +2,7 @@ import smtplib
 import configparser
 
 
-def send_notification(subject, body):
+def send_email(subject, body):
     print("Sending Email")
     config = configparser.RawConfigParser()
     config.read('./config/email_config.ini')
@@ -34,4 +34,4 @@ def send_notification(subject, body):
 
 
 if __name__ == '__main__':
-    send_notification('Printer X has Stalled', 'We shall see if this actually sends this time.')
+    send_email('Printer X has Stalled', 'We shall see if this actually sends this time.')

@@ -6,9 +6,16 @@ import json
 import sqlite3
 import os
 import datetime
-from email_notification import send_notification
+from email_notification import send_email
 from discord_webhook import send_discord_message
-import logging
+
+
+def get_discord_url(id):
+    cur = conn.cursor()
+    sql = '''SELECT discord_url FROM state WHERE id = {}'''.format(id)
+    discord_url = cur.execute(sql)
+    discord_url = discord_url.fetchone()
+    return discord_url[0]
 
 
 def get_all_printers(conn):
@@ -62,8 +69,8 @@ def print_started(conn, id, p_number, printer_state, job_name, job_progress):
     subject = "P{}, Job Started".format(p_number)
     discord_subject = "STARTED"
     message = "Printer {} has started printing of {}.".format(p_number, job_name)
-    message_sent = send_notification(subject, message)
-    send_discord_message(discord_subject, message, p_number)
+    #message_sent = send_email(subject, message)
+    message_sent = send_discord_message(discord_subject, message, p_number, get_discord_url(id))
     if message_sent:
         notified_sql = '''UPDATE state set started_notified = 1 where id = {}'''.format(id)
         cur.execute(notified_sql)
@@ -80,11 +87,15 @@ def print_completed(conn, id, p_number, printer_status, job_name):
     subject = "P{}, Job Completed".format(p_number)
     discord_subject = "COMPLETED"
     message = "Printer {} has completed printing of {}.".format(p_number, job_name)
-    message_sent = send_notification(subject, message)
-    send_discord_message(discord_subject, message, p_number)
+    #message_sent = send_email(subject, message)
+    message_sent = send_discord_message(discord_subject, message, p_number, get_discord_url(id))
     # If the message success sent
     if message_sent:
-        notified_sql = '''UPDATE state set complete_notified = 1 where id = {}'''.format(id)
+        notified_sql = '''UPDATE state set complete_notified = 1, 
+                          stall_start = null,
+                          stalled = 0,
+                          stall_count = 0,
+                          stall_notified = 0 WHERE id = {}'''.format(id)
         cur.execute(notified_sql)
         conn.commit()
 
@@ -121,8 +132,9 @@ def stalled(conn, printer_id):
             subject = "P{}, Stalled".format(printer_id)
             discord_subject = "!!!STALLED!!!"
             message = "P{} Appears to of stalled during the print.".format(printer_id)
-            message_sent = send_notification(subject, message)
-            send_discord_message(discord_subject, message, printer_id)
+            #message_sent = send_email(subject, message)
+            print(get_discord_url(printer_id))
+            message_sent = send_discord_message(discord_subject, message, printer_id, get_discord_url(printer_id))
             if message_sent:
                 cur.execute('''UPDATE state SET stall_notified = 1 WHERE id = {}'''.format(printer_id))
                 conn.commit()
@@ -172,11 +184,18 @@ def db_setup(db):
                                     stall_notified integer,
                                     completed integer,
                                     complete_notified integer,
-                                    started_notified
+                                    started_notified,
+                                    discord_url
                                 ); """
+
+    sql_create_config_table = """CREATE TABLE IF NOT EXISTS config (
+                                        id integer PRIMARY KEY,
+                                        discord_url text
+                                        ); """
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
     cursor.execute(sql_create_state_table)
+    #cursor.execute(sql_create_config_table)
     conn.commit()
     conn.close()
 
@@ -301,8 +320,8 @@ def monitor_prints(conn):
                         subject = "P{}, Recovered!".format(number)
                         discord_subject = "RECOVERED!!!"
                         message = "Printer {} has recovered from a stall!".format(number)
-                        send_notification(subject, message)
-                        send_discord_message(discord_subject, message, number)
+                        #send_email(subject, message)
+                        send_discord_message(discord_subject, message, number, get_discord_url(id))
                     clear_stalled(conn, id)
                 else:
                     # Just putting this here to be able to do something later.
@@ -313,6 +332,27 @@ def monitor_prints(conn):
             # Should Notification be sent?
             pass
 
+
+def clean_up():
+    db_file = './config/stats.db'
+    conn = db_setup_connect(db_file)
+    printers = get_all_printers(conn)
+
+    for printer in printers:
+        id = printer[0]
+        sql = '''UPDATE state set printer_status = 'Unknown',
+                                      job_name = 'none',
+                                      progress = 0,
+                                      stall_start = null,
+                                      stalled = 0,
+                                      stall_count = 0,
+                                      stall_notified = 0,
+                                      completed = 0,
+                                      complete_notified = 0,
+                                      started_notified = 0 WHERE id = {}'''.format(id)
+        cur = conn.cursor()
+        cur.execute(sql)
+        conn.commit()
 
 def main(conn):
     monitor_prints(conn)
@@ -327,10 +367,11 @@ def main(conn):
 
 
 if __name__ == '__main__':
+    clean_up()
+
     while True:
         db_file = './config/stats.db'
         conn = db_setup_connect(db_file)
-
         print("-------------------------------")
         print(datetime.datetime.now())
         print("-------------------------------")

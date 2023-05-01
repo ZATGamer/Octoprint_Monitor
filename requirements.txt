@@ -1,4 +1,4 @@
 requests == 2.23.0
-Flask == 2.0.2
+Flask == 2.3.2
 Flask-Bootstrap4 == 4.0.2
 Flask-WTF == 0.15.1

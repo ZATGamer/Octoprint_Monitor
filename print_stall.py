@@ -371,7 +371,11 @@ def collect_last_print_data(id):
 
 
 def status_changed(conn, db_status, c_status, id, number, c_job_name, db_job_name, c_progress):
-    if db_status.lower() != 'printing' and c_status.lower() == 'printing':
+    if c_status.lower() == 'attention':
+        # Printer is in Attention state and needs you to check on it
+        attention(conn, id, number)
+        print("Printer in ATTENTION state")
+    elif db_status.lower() != 'printing' and c_status.lower() == 'printing':
         # Print Started
         print_started(conn, id, number, c_status, c_job_name, c_progress)
         print("Print Started")
@@ -384,6 +388,7 @@ def status_changed(conn, db_status, c_status, id, number, c_job_name, db_job_nam
         cur = conn.cursor()
         cur.execute('''UPDATE state set printer_status = '{}' WHERE id = {}'''.format("Offline", id))
         conn.commit()
+        print("Printer Offline")
     else:
         # TODO: Handel the Unknown State
         # TODO: Handel Canceling State

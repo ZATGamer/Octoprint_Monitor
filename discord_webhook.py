@@ -11,6 +11,7 @@ def send_discord_message(subject, message, printer, webhook_base_url):
         "RECOVERED!!!": 16776960,
         "Printer Added": 255,
         "Printer Removed": 255,
+        "!!!ATTENTION!!!": 16711680
     }
     data = {
         "username": "Printer {}".format(printer),
@@ -41,3 +42,4 @@ if __name__ == '__main__':
     send_discord_message("COMPLETED", "teste", "T1")
     send_discord_message("!!!STALLED!!!", "teste", "T2")
     send_discord_message("RECOVERED!!!", "teste", "T3")
+    send_discord_message("!!!ATTENTION!!!", "teste", "T4")

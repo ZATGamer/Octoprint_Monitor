@@ -15,10 +15,11 @@ app.config['SECRET_KEY'] = 'ca0xbKZ0qJ4Lxcgw8c7SDujOv1hZ0q5k'
 
 Bootstrap(app)
 
+
 @app.route('/', methods=['GET'])
 def homepage():
     # lets create a home page with some basic links to the other parts of the app.
-    pass
+    return render_template('homepage.html')
 
 
 @app.route('/info', methods=['GET'])
@@ -148,9 +149,9 @@ class AddPrinterForm(FlaskForm):
     printer_user = StringField('Printer Username:')
     printer_password = StringField('Printer Password:')
     printer_model = SelectField('Printer Model:', choices=[('octo', 'Octoprint'),
-                                                           ('mk4', 'Prusa Mk4'),
-                                                           ('mk3s+', 'Prusa Mk3s+'),
-                                                           ('mini+', 'Prusa Mini+')])
+                                                           ('mk4', 'PrusaLink Mk4'),
+                                                           ('mk3s+', 'PrusaLink Mk3s+'),
+                                                           ('mini+', 'PrusaLink Mini+')])
     discord_url = StringField('Discord Webhook URL:')
     submit = SubmitField('Submit')
 

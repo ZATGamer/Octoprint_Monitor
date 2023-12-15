@@ -8,6 +8,7 @@ ADD add_printer.py /
 ADD api.py /
 ADD wrapper.sh /
 ADD templates/index.html /templates/
+ADD templates/delete.html /templates/
 
 RUN pip install -r requirements.txt
 

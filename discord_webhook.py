@@ -10,6 +10,7 @@ def send_discord_message(subject, message, printer, webhook_base_url):
         "!!!STALLED!!!": 16711680,
         "RECOVERED!!!": 16776960,
         "Printer Added": 255,
+        "Printer Removed": 255,
     }
     data = {
         "username": "Printer {}".format(printer),
@@ -26,8 +27,6 @@ def send_discord_message(subject, message, printer, webhook_base_url):
     }
     headers = {'Content-type': 'application/json'}
 
-
-    webhook_base_url = "https://discord.com/api/webhooks/803386709735768144/V3zdiPK-wcaa-VcdEE_h9XcTFQkCEslD1UyE9U-DlwjjQPPHO_rGRkfxLp1XIBXXVtkY"
     print("Sending Discord Message")
     try:
         requests.post(webhook_base_url, data=json.dumps(data), headers=headers)
